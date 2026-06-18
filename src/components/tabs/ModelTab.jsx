@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ScatterChart, Scatter, ZAxis } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
 import { useApp } from "../../context/AppContext";
 import { riskCategory, riskCategoryColor } from "../../utils/dataUtils";
 import { Card, Metric, Badge, Hdr, ttStyle } from "../ui";
@@ -79,14 +79,17 @@ export const ModelTab = ({ cols }) => {
       <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols(2, 1, 1)}, 1fr)`, gap: 12 }}>
         <Card>
           <Hdr sub="ONS data inputs driving ward risk index — real published weights">Feature Contribution</Hdr>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={FEATURE_IMPORTANCE} layout="vertical" margin={{ left: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
-              <XAxis type="number" tick={{ fill: C.textDim, fontSize: 9 }} tickFormatter={(v) => (v * 100).toFixed(0) + "%"} />
-              <YAxis type="category" dataKey="f" tick={{ fill: C.textSec, fontSize: 10 }} width={150} />
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={FEATURE_IMPORTANCE} layout="vertical" margin={{ top: 4, right: 56, left: 10, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={C.border} horizontal={false} />
+              <XAxis type="number" tick={{ fill: C.text, fontSize: 11, fontWeight: 500 }} tickFormatter={(v) => (v * 100).toFixed(0) + "%"} domain={[0, 0.32]} />
+              <YAxis type="category" dataKey="f" tick={{ fill: C.text, fontSize: 11 }} width={158} />
               <Tooltip contentStyle={tt} formatter={(v, n, p) => [(v * 100).toFixed(1) + "%", p.payload.source]} />
               <Bar dataKey="imp" radius={[0, 4, 4, 0]}>
-                {FEATURE_IMPORTANCE.map((d, i) => <Cell key={i} fill={i < 2 ? C.blue : C.blue + "80"} />)}
+                {FEATURE_IMPORTANCE.map((d, i) => <Cell key={i} fill={i < 2 ? C.blue : C.blue + "90"} />)}
+                <LabelList dataKey="imp" position="right"
+                  formatter={(v) => (v * 100).toFixed(0) + "%"}
+                  style={{ fill: C.text, fontSize: 11, fontWeight: 700 }} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -94,16 +97,18 @@ export const ModelTab = ({ cols }) => {
 
         <Card>
           <Hdr accent={C.coral} sub="Distribution of ward-level composite risk indices (real ONS data)">Ward Risk Distribution</Hdr>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={riskDist}>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={riskDist} margin={{ top: 22, right: 8, left: 0, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
-              <XAxis dataKey="band" tick={{ fill: C.textDim, fontSize: 9 }} interval={1} angle={-30} textAnchor="end" height={40} />
-              <YAxis tick={{ fill: C.textDim, fontSize: 10 }} allowDecimals={false} />
+              <XAxis dataKey="band" tick={{ fill: C.text, fontSize: 10, fontWeight: 500 }} interval={0} angle={-30} textAnchor="end" height={44} />
+              <YAxis tick={{ fill: C.text, fontSize: 11 }} allowDecimals={false} />
               <Tooltip contentStyle={tt} formatter={(v) => [`${v} wards`, "Count"]} />
               <Bar dataKey="count" name="Wards" radius={[3, 3, 0, 0]}>
                 {riskDist.map((d, i) => (
-                  <Cell key={i} fill={d.midpoint >= 75 ? C.coral : d.midpoint >= 50 ? C.amber : d.midpoint >= 25 ? C.blue : C.teal} fillOpacity={0.75} />
+                  <Cell key={i} fill={d.midpoint >= 75 ? C.coral : d.midpoint >= 50 ? C.amber : d.midpoint >= 25 ? C.blue : C.teal} fillOpacity={0.85} />
                 ))}
+                <LabelList dataKey="count" position="top" style={{ fill: C.text, fontSize: 11, fontWeight: 700 }}
+                  formatter={(v) => v > 0 ? v : ""} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>

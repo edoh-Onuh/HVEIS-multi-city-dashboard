@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import _ from "lodash";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, ScatterChart, Scatter, ZAxis } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend, LabelList } from "recharts";
 import { useApp } from "../../context/AppContext";
 import { ENGLAND } from "../../data/cities";
 import { Card, Metric, Badge, Hdr, Btn, ttStyle } from "../ui";
@@ -33,42 +33,45 @@ export const WardExplorer = ({ cols }) => {
       <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols(2, 1, 1)}, 1fr)`, gap: 12 }}>
         <Card>
           <Hdr sub={`Census 2021 housing tenure for ${city.name} (${city.ons})`}>Tenure Distribution</Hdr>
-          <ResponsiveContainer width="100%" height={200}>
+          <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               <Pie
                 data={tenureAgg}
-                cx="50%" cy="50%"
-                innerRadius={50} outerRadius={80}
+                cx="50%" cy="48%"
+                innerRadius={55} outerRadius={90}
                 dataKey="value" nameKey="name"
-                label={({ name, value }) => `${value}%`}
-                labelLine={false}
+                label={({ cx, cy, midAngle, outerRadius, value }) => {
+                  const RADIAN = Math.PI / 180;
+                  const r = outerRadius + 26;
+                  const x = cx + r * Math.cos(-midAngle * RADIAN);
+                  const y = cy + r * Math.sin(-midAngle * RADIAN);
+                  return (
+                    <text x={x} y={y} fill={C.text} textAnchor={x > cx ? "start" : "end"} fontSize={12} fontWeight={700}>{value}%</text>
+                  );
+                }}
+                labelLine={{ stroke: C.border, strokeWidth: 1 }}
               >
-                {tenureAgg.map((d, i) => <Cell key={i} fill={d.color} fillOpacity={0.75} />)}
+                {tenureAgg.map((d, i) => <Cell key={i} fill={d.color} fillOpacity={0.85} />)}
               </Pie>
-              <Tooltip contentStyle={tt} formatter={(v) => v + "%"} />
+              <Tooltip contentStyle={tt} formatter={(v, name) => [v + "%", name]} />
+              <Legend wrapperStyle={{ fontSize: 11, color: C.textSec, paddingTop: 4 }} />
             </PieChart>
           </ResponsiveContainer>
-          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginTop: 4 }}>
-            {tenureAgg.map((d) => (
-              <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <div style={{ width: 8, height: 8, borderRadius: 2, background: d.color }} />
-                <span style={{ fontSize: 10, color: C.textSec }}>{d.name}</span>
-              </div>
-            ))}
-          </div>
         </Card>
         <Card>
           <Hdr accent={C.amber} sub="IMD 2019 decile distribution across wards">Deprivation Profile</Hdr>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={_.chain(wards).groupBy("imdDecile").map((v, k) => ({ decile: "D" + k, count: v.length })).sortBy("decile").value()}>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={_.chain(wards).groupBy("imdDecile").map((v, k) => ({ decile: "D" + k, count: v.length, decileNum: +k })).sortBy("decile").value()}
+              margin={{ top: 20, right: 8, left: 0, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
-              <XAxis dataKey="decile" tick={{ fill: C.textDim, fontSize: 10 }} />
-              <YAxis tick={{ fill: C.textDim, fontSize: 10 }} />
-              <Tooltip contentStyle={tt} />
+              <XAxis dataKey="decile" tick={{ fill: C.text, fontSize: 11, fontWeight: 500 }} />
+              <YAxis tick={{ fill: C.text, fontSize: 11 }} allowDecimals={false} />
+              <Tooltip contentStyle={tt} formatter={(v) => [`${v} wards`, "Count"]} />
               <Bar dataKey="count" name="Wards" radius={[3, 3, 0, 0]}>
                 {_.chain(wards).groupBy("imdDecile").map((v, k) => ({ decile: +k })).sortBy("decile").value().map((d, i) => (
-                  <Cell key={i} fill={d.decile <= 2 ? C.coral : d.decile <= 4 ? C.amber : C.teal} fillOpacity={0.75} />
+                  <Cell key={i} fill={d.decile <= 2 ? C.coral : d.decile <= 4 ? C.amber : C.teal} fillOpacity={0.85} />
                 ))}
+                <LabelList dataKey="count" position="top" style={{ fill: C.text, fontSize: 11, fontWeight: 700 }} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
