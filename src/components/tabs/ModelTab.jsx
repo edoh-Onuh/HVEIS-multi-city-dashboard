@@ -1,6 +1,7 @@
 import _ from "lodash";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
 import { useApp } from "../../context/AppContext";
+import { useBreakpoint } from "../../hooks/useBreakpoint";
 import { riskCategory, riskCategoryColor } from "../../utils/dataUtils";
 import { Card, Metric, Badge, Hdr, ttStyle } from "../ui";
 
@@ -18,7 +19,9 @@ const FEATURE_IMPORTANCE = [
 
 export const ModelTab = ({ cols }) => {
   const { C, wardRiskScores, city, wards, dataSource } = useApp();
+  const { isMobile } = useBreakpoint();
   const tt = ttStyle(C);
+  const chartH = isMobile ? 270 : 260;
 
   const high = wardRiskScores.filter((w) => w.riskIndex >= 75).length;
   const medium = wardRiskScores.filter((w) => w.riskIndex >= 50 && w.riskIndex < 75).length;
@@ -79,11 +82,12 @@ export const ModelTab = ({ cols }) => {
       <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols(2, 1, 1)}, 1fr)`, gap: 12 }}>
         <Card>
           <Hdr sub="ONS data inputs driving ward risk index — real published weights">Feature Contribution</Hdr>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={FEATURE_IMPORTANCE} layout="vertical" margin={{ top: 4, right: 56, left: 10, bottom: 4 }}>
+          <div style={{ width: "100%", height: chartH }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={FEATURE_IMPORTANCE} layout="vertical" margin={{ top: 4, right: isMobile ? 44 : 56, left: 10, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={C.border} horizontal={false} />
-              <XAxis type="number" tick={{ fill: C.text, fontSize: 11, fontWeight: 500 }} tickFormatter={(v) => (v * 100).toFixed(0) + "%"} domain={[0, 0.32]} />
-              <YAxis type="category" dataKey="f" tick={{ fill: C.text, fontSize: 11 }} width={158} />
+              <XAxis type="number" tick={{ fill: C.text, fontSize: isMobile ? 10 : 11, fontWeight: 500 }} tickFormatter={(v) => (v * 100).toFixed(0) + "%"} domain={[0, 0.32]} />
+              <YAxis type="category" dataKey="f" tick={{ fill: C.text, fontSize: isMobile ? 9 : 11 }} width={isMobile ? 130 : 158} />
               <Tooltip contentStyle={tt} formatter={(v, n, p) => [(v * 100).toFixed(1) + "%", p.payload.source]} />
               <Bar dataKey="imp" radius={[0, 4, 4, 0]}>
                 {FEATURE_IMPORTANCE.map((d, i) => <Cell key={i} fill={i < 2 ? C.blue : C.blue + "90"} />)}
@@ -93,25 +97,28 @@ export const ModelTab = ({ cols }) => {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </Card>
 
         <Card>
           <Hdr accent={C.coral} sub="Distribution of ward-level composite risk indices (real ONS data)">Ward Risk Distribution</Hdr>
-          <ResponsiveContainer width="100%" height={260}>
+          <div style={{ width: "100%", height: chartH }}>
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart data={riskDist} margin={{ top: 22, right: 8, left: 0, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
-              <XAxis dataKey="band" tick={{ fill: C.text, fontSize: 10, fontWeight: 500 }} interval={0} angle={-30} textAnchor="end" height={44} />
-              <YAxis tick={{ fill: C.text, fontSize: 11 }} allowDecimals={false} />
+              <XAxis dataKey="band" tick={{ fill: C.text, fontSize: isMobile ? 8 : 10, fontWeight: 500 }} interval={0} angle={-30} textAnchor="end" height={44} />
+              <YAxis tick={{ fill: C.text, fontSize: isMobile ? 10 : 11 }} allowDecimals={false} width={28} />
               <Tooltip contentStyle={tt} formatter={(v) => [`${v} wards`, "Count"]} />
               <Bar dataKey="count" name="Wards" radius={[3, 3, 0, 0]}>
                 {riskDist.map((d, i) => (
                   <Cell key={i} fill={d.midpoint >= 75 ? C.coral : d.midpoint >= 50 ? C.amber : d.midpoint >= 25 ? C.blue : C.teal} fillOpacity={0.85} />
                 ))}
-                <LabelList dataKey="count" position="top" style={{ fill: C.text, fontSize: 11, fontWeight: 700 }}
+                <LabelList dataKey="count" position="top" style={{ fill: C.text, fontSize: isMobile ? 10 : 11, fontWeight: 700 }}
                   formatter={(v) => v > 0 ? v : ""} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </Card>
       </div>
 
