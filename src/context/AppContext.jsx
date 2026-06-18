@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, useMemo } from "react";
-import { CITIES, getCityById } from "../data/cities";
-import { getWardsForCity } from "../data/wards";
-import { generateHouseholds } from "../utils/dataUtils";
+import { CITIES } from "../data/cities";
 import { PALETTES, getRiskColor } from "../utils/colors";
+import { useCityData } from "../hooks/useCityData";
+import { computeWardRiskScores } from "../utils/dataUtils";
 
 const AppContext = createContext(null);
 
@@ -10,14 +10,21 @@ export const AppProvider = ({ children }) => {
   const [cityId, setCityId] = useState("sunderland");
   const [paletteKey, setPaletteKey] = useState("default");
 
-  const city = useMemo(() => getCityById(cityId), [cityId]);
-  const wards = useMemo(() => getWardsForCity(cityId), [cityId]);
-  const households = useMemo(() => generateHouseholds(wards, cityId.split("").reduce((a, c) => a + c.charCodeAt(0), 0)), [wards, cityId]);
+  const { city, wards, loading, error, dataSource } = useCityData(cityId);
+
+  // Compute ward-level risk scores from real ONS/IMD data — no synthetic households
+  const wardRiskScores = useMemo(() => computeWardRiskScores(wards), [wards]);
+
   const C = PALETTES[paletteKey] || PALETTES.default;
   const riskColor = getRiskColor(C);
 
   return (
-    <AppContext.Provider value={{ city, cities: CITIES, cityId, setCityId, wards, households, C, riskColor, paletteKey, setPaletteKey }}>
+    <AppContext.Provider value={{
+      city, cities: CITIES, cityId, setCityId,
+      wards, wardRiskScores,
+      loading, error, dataSource,
+      C, riskColor, paletteKey, setPaletteKey,
+    }}>
       {children}
     </AppContext.Provider>
   );
