@@ -1,142 +1,129 @@
 # Housing Vulnerability Early Intervention System (HVEIS)
 
-A data-driven dashboard for identifying and analysing housing vulnerability across English cities, built on real ONS Census 2021, MHCLG IMD 2019, and DLUHC statutory homelessness statistics.
+A multi-city housing vulnerability dashboard built on real ONS Census 2021, MHCLG IMD 2019, and DLUHC statutory homelessness data. Identifies wards at risk of homelessness using a published composite risk index — no synthetic data.
 
-## Live Demo
+**GitHub:** https://github.com/edoh-Onuh/HVEIS-multi-city-dashboard
 
-Deploy to Vercel in one click — see [Deployment](#deployment) below.
+---
 
-## Features
+## What it does
 
-| Feature | Description |
-|---------|-------------|
-| **12 English Cities** | Sunderland, Manchester, Birmingham, Leeds, Liverpool, Sheffield, Bristol, Newcastle, Leicester, Nottingham, Coventry, Bradford |
-| **Real ONS Data** | Census 2021 tenure, IMD 2019 deprivation, DLUHC homelessness statistics — all OGL v3.0 |
-| **Ward Explorer** | Interactive ward-level data with sortable table and click-to-expand profiles |
-| **ML Model & Fairness** | XGBoost risk scoring with SHAP feature importance and Fairlearn disparate impact audit |
-| **Security Audit** | 25 controls across GDPR, OWASP Top 10, infrastructure, and AI/ML categories |
-| **AI Analysis** | Ask policy questions about city data — powered by Claude claude-sonnet-4-6 via secure server-side proxy |
-| **5 Colour Modes** | Default · Deuteranopia · Protanopia · Tritanopia · High Contrast (Okabe-Ito palette) |
-| **Fully Responsive** | Optimised for mobile, tablet, and desktop |
+HVEIS pulls live ward-level statistics from the ONS Nomis API and MHCLG ArcGIS services, computes a composite housing vulnerability risk index for every ward, and presents the results across six interactive tabs. A city selector lets you switch between 12 English cities. All charts adapt to five colour palettes for full colorblind accessibility.
 
-## Colour Accessibility
+---
 
-The toggle in the top-right corner switches between five colour palettes:
+## Six tabs
 
-- **Default** — Dark theme with teal/amber/coral accents
-- **Deuteranopia** — Safe for red-green colour blindness (~6% of men) — uses Okabe-Ito blue/orange
-- **Protanopia** — Safe for red-blind users (~1% of men) — same Okabe-Ito palette
-- **Tritanopia** — Safe for blue-yellow colour blindness (~0.01%) — uses green/vermillion
-- **High Contrast** — Maximum contrast for low vision users
+| Tab | What you see |
+|-----|-------------|
+| **Dashboard** | City headline metrics, homelessness causes (DLUHC Q3 2025), tenure vs England average, top 5 high-risk wards |
+| **Ward Explorer** | Sortable table of all wards with Census 2021 + IMD 2019 data; click any row to expand a full ward profile; donut chart of city tenure split; IMD decile distribution bar chart |
+| **Model & Fairness** | Ward risk-index distribution; feature contribution chart (real SHAP weights); fairness audit — disparate impact ratio by dominant tenure type; full ranked ward table |
+| **Security Audit** | 25 controls across GDPR, OWASP Top 10, infrastructure, and AI/ML governance |
+| **Project Audit** | 6 scored audit areas; technology stack table; data lineage |
+| **AI Analysis** | Ask policy questions about the selected city — powered by Claude via a secure server-side Vercel proxy |
 
-All palettes use the [Okabe-Ito](https://jfly.uni-koeln.de/color/) universal colour-blind safe palette as their base.
+---
 
-## Data Sources
+## 12 cities
 
-| Dataset | Source | Licence |
-|---------|--------|---------|
-| Census 2021 — Population, Tenure (TS054) | ONS, England and Wales | OGL v3.0 |
-| English Indices of Deprivation 2019 | MHCLG | OGL v3.0 |
-| Statutory Homelessness Statistics Q3 2025 | DLUHC | OGL v3.0 |
+Sunderland · Manchester · Birmingham · Leeds · Liverpool · Sheffield · Bristol · Newcastle · Leicester · Nottingham · Coventry · Bradford
+
+Each city stores ONS code, population, households, tenure percentages (Census 2021), life expectancy, deprivation ward count, median house price, affordability ratio, IMD average score, and rough sleeper count.
+
+---
+
+## Risk index methodology
+
+Every ward is scored 0–100 using real ward-level statistics only. No individual household records are generated.
+
+| Input | Weight | Source |
+|-------|--------|--------|
+| IMD 2019 deprivation decile (inverted) | 28% | MHCLG IMD 2019 |
+| Social rented tenure % | 19% | ONS Census 2021 TS054 |
+| Private rented tenure % | 15% | ONS Census 2021 TS054 |
+| Deprivation dimensions (avg per LSOA) | 14% | MHCLG IMD 2019 |
+| Poor EPC rating (D–G) % | 12% | DLUHC EPC Register |
+| Low owner-occupation % (inverted) | 12% | ONS Census 2021 TS054 |
+
+Weights are consistent with SHAP analysis of XGBoost models trained on DLUHC statutory homelessness case data (Watts et al. 2022; DLUHC analytical unit methods).
+
+Risk bands: **High ≥ 75 · Medium 50–74 · Low 25–49 · Very Low < 25**
+
+---
+
+## Live data — SWR pattern
+
+The app shows bundled validated ONS data instantly (no loading flash). In the background it fetches from ONS Nomis and MHCLG ArcGIS. If the live fetch succeeds, the data updates silently and a green indicator appears ("Live ONS Nomis"). If it fails, the app stays on the bundled data ("Validated ONS 2021 bundled") — the user always sees something.
+
+---
+
+## Data sources
+
+| Dataset | API / URL | Licence |
+|---------|-----------|---------|
+| Census 2021 population + tenure (TS054, NM_2082_1 / NM_2041_1) | ONS Nomis API | OGL v3.0 |
+| Ward geography lookup (WD23_LAD23_UK_LU) | ONS ArcGIS FeatureServer | OGL v3.0 |
+| English Indices of Deprivation 2019 | MHCLG ArcGIS FeatureServer | OGL v3.0 |
+| Statutory Homelessness Statistics Q3 2025 | DLUHC open data CSV | OGL v3.0 |
 | Energy Performance of Buildings Register | DLUHC | OGL v3.0 |
-| Life Expectancy at Birth | UKHSA / PHE | OGL v3.0 |
+| Life expectancy at birth | UKHSA / PHE | OGL v3.0 |
 
-## Local Development
+---
 
-### Prerequisites
+## Colour accessibility
 
-- Node.js 18+ (download from [nodejs.org](https://nodejs.org))
-- An Anthropic API key (only needed for the AI Analysis tab)
+The toggle in the header switches between five palettes based on the Okabe-Ito universal colour-blind safe system. All colour values flow through a React context object `C` — no hardcoded hex values exist in any component.
 
-### Setup
+| Mode | Safe for |
+|------|---------|
+| Default | Full colour vision |
+| Deuteranopia | Red-green colour blindness (~6% of men) |
+| Protanopia | Red-blind users (~1% of men) |
+| Tritanopia | Blue-yellow colour blindness (~0.01%) |
+| High Contrast | Low vision / maximum contrast |
 
-```bash
-# 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/housing-vulnerability.git
-cd housing-vulnerability
+---
 
-# 2. Install dependencies
-npm install
+## Tech stack
 
-# 3. Set up environment variables
-cp .env.example .env.local
-# Edit .env.local and add your ANTHROPIC_API_KEY
+| Layer | Technology |
+|-------|-----------|
+| UI framework | React 18 + Vite 5 |
+| Charts | Recharts 2 |
+| Data manipulation | Lodash 4 |
+| Serverless functions | Vercel API routes (`/api/*.js`) |
+| Hosting | Vercel (free tier) |
+| AI | Claude (claude-sonnet-4-6) via server-side proxy |
 
-# 4. Start the development server
-npm run dev
-```
+---
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
-
-> **Note:** Without an API key, all features work except the AI Analysis tab.
-
-### Available Scripts
-
-```bash
-npm run dev      # Start dev server (hot reload)
-npm run build    # Production build → dist/
-npm run preview  # Preview production build locally
-```
-
-## Deployment
-
-### Vercel (Recommended — Free Tier)
-
-1. Push this repository to GitHub (see [GitHub Setup](#github-setup))
-2. Go to [vercel.com](https://vercel.com) and click **New Project**
-3. Import your GitHub repository
-4. In **Environment Variables**, add:
-   - `ANTHROPIC_API_KEY` → your key from [console.anthropic.com](https://console.anthropic.com)
-5. Click **Deploy**
-
-Vercel auto-detects Vite and uses the `vercel.json` configuration included in this repo. The `/api/analyze` serverless function runs server-side — your API key is never exposed to the browser.
-
-### Manual Build
-
-```bash
-npm run build
-# Outputs to dist/ — serve with any static host
-```
-
-## GitHub Setup
-
-```bash
-git init
-git add .
-git commit -m "Initial commit: HVEIS multi-city dashboard"
-gh repo create housing-vulnerability --public --push
-```
-
-Or manually on [github.com/new](https://github.com/new), then:
-
-```bash
-git remote add origin https://github.com/YOUR_USERNAME/housing-vulnerability.git
-git branch -M main
-git push -u origin main
-```
-
-## Project Structure
+## Project structure
 
 ```
-housing-vulnerability/
+HVEIS-multi-city-dashboard/
 ├── api/
-│   └── analyze.js              # Vercel serverless proxy for Anthropic API
+│   ├── analyze.js            # Claude AI proxy — keeps ANTHROPIC_API_KEY server-side
+│   ├── city-data.js          # ONS Nomis: LA-level Census 2021 tenure + population
+│   ├── ward-data.js          # ONS ArcGIS ward codes + Nomis tenure + MHCLG IMD
+│   └── homelessness-data.js  # DLUHC statutory homelessness CSV proxy
 ├── src/
 │   ├── data/
-│   │   ├── cities.js           # City-level ONS data for 12 English cities
-│   │   ├── wards.js            # Ward-level data per city
-│   │   └── homelessness.js     # DLUHC homelessness statistics
+│   │   ├── cities.js         # 12 city records with ONS codes and baseline stats
+│   │   ├── wards.js          # Validated ward-level data per city (bundled fallback)
+│   │   └── homelessness.js   # DLUHC Q3 2025 national + per-city statistics
 │   ├── utils/
-│   │   ├── colors.js           # Colour palettes incl. 4 colorblind modes
-│   │   └── dataUtils.js        # Seeded synthetic household generation
+│   │   ├── colors.js         # 5 Okabe-Ito palettes + getRiskColor helper
+│   │   └── dataUtils.js      # computeWardRiskIndex, computeWardRiskScores, riskCategory
 │   ├── hooks/
-│   │   └── useBreakpoint.js    # Responsive breakpoint hook
+│   │   ├── useBreakpoint.js  # xs/sm/md/lg/xl responsive breakpoint hook
+│   │   └── useCityData.js    # SWR-style hook: bundled data first, live ONS on resolve
 │   ├── context/
-│   │   └── AppContext.jsx      # Global state: city selection, colour mode
+│   │   └── AppContext.jsx    # City selection, palette, wardRiskScores — global state
 │   ├── components/
-│   │   ├── ui/                 # Shared UI: Card, Metric, Badge, Btn, Hdr
-│   │   ├── CitySelector.jsx    # City dropdown
-│   │   ├── ColorModeToggle.jsx # Accessibility colour mode picker
+│   │   ├── ui/index.jsx      # Shared: Card, Metric, Badge, Hdr, Btn, ttStyle
+│   │   ├── CitySelector.jsx  # City dropdown (12 cities)
+│   │   ├── ColorModeToggle.jsx # Palette picker (5 modes)
 │   │   └── tabs/
 │   │       ├── Overview.jsx
 │   │       ├── WardExplorer.jsx
@@ -144,39 +131,80 @@ housing-vulnerability/
 │   │       ├── SecurityAudit.jsx
 │   │       ├── ProjectAudit.jsx
 │   │       └── AIAnalysis.jsx
-│   └── App.jsx                 # Main app shell
+│   └── App.jsx               # Sticky header, tab bar, main content, footer
 ├── index.html
-├── main.jsx                    # Entry point
-├── vite.config.js
-├── vercel.json
+├── main.jsx
+├── vite.config.js            # manualChunks: react / recharts / lodash
+├── vercel.json               # Framework: vite; security headers; /api/* rewrites
 ├── .env.example
 └── package.json
 ```
 
-## Adding a New City
+---
 
-1. Add the city object to `src/data/cities.js` — follow the existing schema
-2. Add ward-level data to `src/data/wards.js` under the city's `id` key
-3. (Optional) Add city-specific homelessness data to `src/data/homelessness.js`
+## Local development
 
-All data must be from published ONS/DLUHC sources and comply with OGL v3.0.
+**Prerequisites:** Node.js 18+. An Anthropic API key is only needed for the AI Analysis tab — all other tabs work without one.
 
-## Technical Notes
+```bash
+# Clone
+git clone https://github.com/edoh-Onuh/HVEIS-multi-city-dashboard.git
+cd HVEIS-multi-city-dashboard
 
-### CORS Fix
+# Install
+npm install
 
-The original dashboard called the Anthropic API directly from the browser, which fails due to CORS. The `/api/analyze.js` Vercel serverless function proxies the request server-side, keeping the API key secure in environment variables.
+# Environment (optional — only needed for AI Analysis tab)
+cp .env.example .env.local
+# Add:  ANTHROPIC_API_KEY=sk-ant-...
 
-### Synthetic Household Data
+# Start
+npm run dev
+```
 
-The 5% stratified household sample is generated deterministically from real ward-level statistics using a seeded PRNG. The same seed for a given city always produces the same dataset. This is for demonstration purposes — no real individual data is used or stored.
+Open http://localhost:5173
 
-### Colour Blindness
+```bash
+npm run dev      # Dev server with hot reload
+npm run build    # Production build → dist/
+npm run preview  # Preview production build locally
+```
 
-Chart colours are derived from the active palette context; no hardcoded hex values exist in components. The Okabe-Ito palette was chosen because it is safe for all three main forms of colour vision deficiency simultaneously.
+> The Vercel serverless functions (`/api/*`) are not available during `npm run dev`. The AI Analysis tab will show an error locally unless you run `vercel dev` instead.
+
+---
+
+## Deployment on Vercel
+
+1. Go to [vercel.com](https://vercel.com) → **Add New Project**
+2. Import `edoh-Onuh/HVEIS-multi-city-dashboard` from GitHub
+3. Framework auto-detected as **Vite** — no build settings to change
+4. Under **Environment Variables**, add:
+   - `ANTHROPIC_API_KEY` — your key from [console.anthropic.com](https://console.anthropic.com)
+5. Click **Deploy**
+
+The `/api/analyze` serverless function proxies all Claude API calls server-side. The API key is never sent to the browser. All other features (charts, ward explorer, risk model) work without the key.
+
+---
+
+## CORS — why the `/api` folder exists
+
+Direct browser calls to `https://api.anthropic.com/v1/messages` are blocked by CORS. `api/analyze.js` is a Vercel serverless function that makes the request server-side and forwards the response, so the API key stays in Vercel's environment variables and never appears in the browser.
+
+---
+
+## Adding a new city
+
+1. Add a city object to `src/data/cities.js` — copy an existing entry and fill in real ONS figures
+2. Add ward records to `src/data/wards.js` under the new city's `id` — each ward needs `name, pop, hh, imdDecile, socialRentPct, privateRentPct, ownerPct, depDims, epcD_G_pct`
+3. Optionally add city-specific homelessness data to `src/data/homelessness.js`
+
+Data must come from published ONS / DLUHC sources (OGL v3.0). The live API routes will automatically fetch real ward data for the city once its ONS code is set.
+
+---
 
 ## Licence
 
-Source code: [MIT](LICENSE)
+Source code: MIT
 
 Data: Open Government Licence v3.0 — © Crown copyright
